@@ -29,6 +29,11 @@ export class GameScene extends Container {
   private readonly soundButton: Button;
   private readonly winBanner = new WinBanner();
   private readonly loadingOverlay = new Container();
+  private readonly paylinePulse = new Graphics();
+  private readonly winFlash = new Graphics();
+  private loadingText: Text | null = null;
+  private elapsed = 0;
+  private winFlashTimer = 0;
   private currentSpin: Promise<void> | null = null;
   private soundEnabled = false;
 
@@ -79,8 +84,10 @@ export class GameScene extends Container {
   }
 
   update(deltaSeconds: number): void {
+    this.elapsed += deltaSeconds;
     this.reels.forEach((reel) => reel.update(deltaSeconds));
     this.winBanner.update(deltaSeconds);
+    this.updateSceneEffects(deltaSeconds);
   }
 
   getSnapshot(): GameSnapshot {
@@ -121,8 +128,12 @@ export class GameScene extends Container {
       .fill('#111421')
       .stroke({ color: '#ffcf64', width: 3 });
     const payline = new Graphics().rect(102, 318, 696, 4).fill({ color: '#ffd66d', alpha: 0.7 });
+    this.paylinePulse.rect(102, 310, 696, 20).fill({ color: '#ffe39d', alpha: 0.24 });
+    this.paylinePulse.alpha = 0;
+    this.winFlash.roundRect(80, 126, 740, 418, 12).fill({ color: '#ffe39d', alpha: 0.16 });
+    this.winFlash.alpha = 0;
 
-    root.addChild(backdrop, header, machine, payline);
+    root.addChild(backdrop, header, machine, payline, this.paylinePulse, this.winFlash);
     this.addReels(root, table);
     this.addHud(root);
 
@@ -185,6 +196,7 @@ export class GameScene extends Container {
     });
     text.anchor.set(0.5);
     text.position.set(LOGICAL_WIDTH / 2, LOGICAL_HEIGHT / 2);
+    this.loadingText = text;
     this.loadingOverlay.addChild(shade, text);
   }
 
@@ -211,7 +223,7 @@ export class GameScene extends Container {
         reel.stopWith(result.reels[index]);
       }),
     );
-    await delay(520);
+    await delay(880);
 
     this.state.startEvaluation();
     this.state.settleSpin(result);
@@ -233,7 +245,30 @@ export class GameScene extends Container {
 
     if (result.totalWin > 0) {
       this.winBanner.show(result.totalWin);
+      this.winFlashTimer = 0.45;
     }
+  }
+
+  private updateSceneEffects(deltaSeconds: number): void {
+    const snapshot = this.state.snapshot;
+    const isSpinning = snapshot.status === 'spinning';
+    this.paylinePulse.alpha = isSpinning ? 0.2 + Math.sin(this.elapsed * 16) * 0.14 : 0;
+    this.paylinePulse.x = isSpinning ? Math.sin(this.elapsed * 6) * 5 : 0;
+
+    if (this.loadingOverlay.visible && this.loadingText) {
+      this.loadingText.alpha = 0.68 + Math.sin(this.elapsed * 7) * 0.22;
+      this.loadingText.scale.set(1 + Math.sin(this.elapsed * 5) * 0.025);
+    }
+
+    if (this.winFlashTimer > 0) {
+      this.winFlashTimer -= deltaSeconds;
+      this.winFlash.alpha = Math.max(0, this.winFlashTimer / 0.45) * 0.22;
+      this.winFlash.scale.set(1 + (1 - this.winFlashTimer / 0.45) * 0.012);
+      return;
+    }
+
+    this.winFlash.alpha = 0;
+    this.winFlash.scale.set(1);
   }
 
   private toggleSound(): void {

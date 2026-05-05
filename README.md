@@ -91,8 +91,8 @@ The slot math is isolated from PixiJS rendering. The game state machine owns bal
 Use Node.js 18.18+.
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Open the local Vite URL in the browser.
@@ -106,11 +106,11 @@ http://localhost:5173/?debug=true
 ## Scripts
 
 ```bash
-npm run dev
-npm run build
-npm run preview
-npm run lint
-npm run format
+pnpm run dev
+pnpm run build
+pnpm run preview
+pnpm run lint
+pnpm run format
 ```
 
 ## What could be improved next
