@@ -1,5 +1,7 @@
 # pixi-slot-demo
 
+![Pixi Slot Demo preview](public/preview.gif)
+
 A small HTML5 slot game demo built with TypeScript, Vite, and PixiJS.
 
 ## Why this project exists
